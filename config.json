@@ -1,0 +1,15 @@
+{
+  "imap": {
+    "server": "mail.yourdomain.com",
+    "port": 993,
+    "username": "user@yourdomain.com",
+    "password": "yourpassword"
+  },
+  "chrome": {
+    "user_agent": "Custom User Agent",
+    "proxy": "http://ip:port"
+  },
+  "captcha": {
+    "api_key": "YOUR_2CAPTCHA_KEY"
+  }
+}
