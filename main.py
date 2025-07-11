@@ -3,6 +3,7 @@ import json
 from modules.google_signup_with_verification import create_google_account_with_verification
 from utils.config_loader import load_config, validate_config
 from utils.logger import log_info, log_error, log_warning
+from utils.menu_system import handle_main_menu, show_statistics
 
 def main():
     """Asosiy dastur."""
@@ -18,22 +19,10 @@ def main():
             log_error("Config fayli noto'g'ri formatda")
             return False
         
-        # Foydalanuvchi ma'lumotlari
-        user_data = {
-            'first_name': 'John',
-            'last_name': 'Doe',
-            'email': 'user123@yourdomain.com',
-            'password': 'StrongPassword123!',
-            'birth_day': '10',
-            'birth_month': 'July',
-            'birth_year': '1990',
-            'gender': 'male'
-        }
-        
         log_info("Google hisob yaratish boshlanmoqda...")
         
         # Google hisob yaratish
-        result = create_google_account_with_verification(user_data, config)
+        result = create_google_account_with_verification(config=config)
         
         if result['status'] == 'created':
             log_info("Google hisob muvaffaqiyatli yaratildi!")
@@ -53,6 +42,37 @@ def main():
         return False
     except Exception as e:
         log_error(f"Kutilmagan xatolik: {e}")
+        return False
+
+def run_with_menu():
+    """Menyu bilan ishga tushirish."""
+    try:
+        while True:
+            choice = handle_main_menu()
+            
+            if choice == "create_account":
+                print("\n🚀 Google hisob yaratish boshlanmoqda...")
+                result = create_google_account_with_verification()
+                
+                if result['status'] == 'created':
+                    print("\n✅ MUVAFFAQIYATLI!")
+                    print("="*50)
+                    print(f"📧 Email: {result['email']}")
+                    print(f"📊 Status: {result['status']}")
+                    print(f"🍪 Cookies: {result['cookies']}")
+                    print(f"📸 Screenshot: {result['screenshot']}")
+                    print(f"⏰ Vaqt: {result['timestamp']}")
+                    print("="*50)
+                else:
+                    print(f"\n❌ XATOLIK: {result['message']}")
+                
+                input("\nDavom etish uchun Enter tugmasini bosing...")
+            
+    except KeyboardInterrupt:
+        print("\n👋 Xayr!")
+        sys.exit(0)
+    except Exception as e:
+        log_error(f"Menyu ishlashda xatolik: {e}")
         return False
 
 def test_config():
@@ -108,12 +128,16 @@ if __name__ == "__main__":
         elif sys.argv[1] == "--help":
             print("Google Account Creator")
             print("Foydalanish:")
-            print("  python main.py                    - Asosiy dastur")
+            print("  python main.py                    - Asosiy dastur (mendu bilan)")
+            print("  python main.py --direct           - To'g'ridan-to'g'ri ishga tushirish")
             print("  python main.py --test-config      - Config faylini test qilish")
             print("  python main.py --create-config    - Namuna config yaratish")
             print("  python main.py --help             - Yordam")
             sys.exit(0)
+        elif sys.argv[1] == "--direct":
+            # To'g'ridan-to'g'ri ishga tushirish
+            success = main()
+            sys.exit(0 if success else 1)
     
-    # Asosiy dastur
-    success = main()
-    sys.exit(0 if success else 1)
+    # Asosiy dastur (mendu bilan)
+    run_with_menu()

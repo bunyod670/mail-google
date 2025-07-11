@@ -1,6 +1,6 @@
 import json
 import os
-from utils.logger import log_info, log_error
+from utils.logger import log_info, log_error, log_warning
 
 def load_config(path):
     """config.json faylidan sozlamalarni yuklash."""
@@ -40,3 +40,30 @@ def validate_config(config):
     
     log_info("Config fayli to'g'ri formatda")
     return True
+
+def create_sample_config():
+    """Namuna config faylini yaratish."""
+    sample_config = {
+        "imap": {
+            "server": "mail.yourdomain.com",
+            "port": 993,
+            "username": "user@yourdomain.com",
+            "password": "yourpassword"
+        },
+        "chrome": {
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "proxy": ""
+        },
+        "captcha": {
+            "api_key": "YOUR_2CAPTCHA_KEY"
+        }
+    }
+    
+    try:
+        with open('config.json', 'w', encoding='utf-8') as f:
+            json.dump(sample_config, f, indent=2, ensure_ascii=False)
+        log_info("Namuna config fayli yaratildi: config.json")
+        return True
+    except Exception as e:
+        log_error(f"Config faylini yaratishda xatolik: {e}")
+        return False

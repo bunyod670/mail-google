@@ -6,22 +6,44 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from utils.logger import log_info, log_error, log_debug
+from utils.logger import log_info, log_error, log_debug, log_warning
 from utils.imap_verifier import connect_imap, fetch_latest_email, extract_verification_code, disconnect_imap
 from utils.captcha_solver import detect_captcha, take_captcha_screenshot, solve_captcha, check_captcha_solved
 from utils.session_manager import save_cookies, load_cookies
 from utils.config_loader import load_config, validate_config
 from utils.random_delay import wait_random, wait_human_like
+from utils.user_agent_manager import get_random_user_agent, get_user_agent_by_type
+from utils.proxy_manager import get_proxy_list, get_random_proxy
+from utils.email_manager import get_email_list, get_random_email, generate_user_data_from_email
 
-def create_google_account_with_verification(user_data, config):
+def create_google_account_with_verification(user_data=None, config=None):
     """Google hisobini yaratish va barcha jarayonlarni boshqarish."""
     driver = None
     imap = None
     
     try:
-        # Config'ni tekshirish
-        if not validate_config(config):
+        # Config'ni yuklash
+        if not config:
+            config = load_config('config.json')
+        
+        if not config or not validate_config(config):
             return {"status": "error", "message": "Config fayli noto'g'ri"}
+        
+        # Email ro'yxatini yuklash
+        email_list = get_email_list()
+        if not email_list:
+            return {"status": "error", "message": "Email ro'yxati topilmadi"}
+        
+        # Email tanlash
+        selected_email = get_random_email(email_list)
+        if not selected_email:
+            return {"status": "error", "message": "Email tanlanmadi"}
+        
+        # Foydalanuvchi ma'lumotlarini yaratish
+        if not user_data:
+            user_data = generate_user_data_from_email(selected_email)
+            if not user_data:
+                return {"status": "error", "message": "Foydalanuvchi ma'lumotlari yaratilmadi"}
         
         log_info(f"Google hisob yaratish boshlanmoqda: {user_data['email']}")
         
@@ -99,23 +121,35 @@ def create_chrome_session(config):
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
         
-        # User agent
-        if 'user_agent' in config['chrome']:
-            chrome_options.add_argument(f"--user-agent={config['chrome']['user_agent']}")
+        # Fake User Agent
+        user_agent = get_random_user_agent()
+        chrome_options.add_argument(f"--user-agent={user_agent}")
+        log_info(f"User Agent o'rnatildi: {user_agent}")
         
         # Proxy
-        if 'proxy' in config['chrome'] and config['chrome']['proxy']:
-            chrome_options.add_argument(f"--proxy-server={config['chrome']['proxy']}")
+        proxy_list = get_proxy_list()
+        if proxy_list:
+            selected_proxy = get_random_proxy(proxy_list)
+            if selected_proxy:
+                chrome_options.add_argument(f"--proxy-server={selected_proxy}")
+                log_info(f"Proxy o'rnatildi: {selected_proxy}")
         
         # Qo'shimcha sozlamalar
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-plugins")
         chrome_options.add_argument("--disable-images")
+        chrome_options.add_argument("--disable-web-security")
+        chrome_options.add_argument("--allow-running-insecure-content")
+        
+        # Window size
+        chrome_options.add_argument("--window-size=1920,1080")
         
         driver = webdriver.Chrome(options=chrome_options)
         
         # JavaScript orqali automation belgilarini yashirish
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        driver.execute_script("Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]})")
+        driver.execute_script("Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']})")
         
         log_info("Chrome sessiyasi muvaffaqiyatli yaratildi")
         return driver
